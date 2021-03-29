@@ -1,5 +1,3 @@
-# Attribution: https://github.com/kartoza/docker-geoserver/blob/master/Dockerfile
-
 ARG IMAGE_VERSION=jdk11-openjdk-slim-buster
 ARG JAVA_HOME=/usr/local/openjdk-11
 FROM tomcat:$IMAGE_VERSION
@@ -11,7 +9,18 @@ ARG ACTIVATE_ALL_COMMUNITY_EXTENTIONS=1
 
 RUN apt-get -y update; apt-get install -y fonts-cantarell lmodern ttf-aenigma ttf-georgewilliams ttf-bitstream-vera \
     ttf-sjfonts tv-fonts build-essential libapr1-dev libssl-dev  gdal-bin libgdal-java wget zip curl xsltproc certbot \
-    certbot  cabextract
+    certbot cabextract build-essential zlib1g-dev libncurses5-dev libgdbm-dev libnss3-dev libssl-dev libsqlite3-dev \
+    libreadline-dev libffi-dev libbz2-dev
+RUN apt purge -y python2.7-minimal python2 python2.7
+RUN apt purge -y python3.7-minimal python3 python3.7
+RUN apt autoremove -y
+WORKDIR /tmp
+RUN wget https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tgz
+RUN tar -xf Python-3.9.2.tgz
+WORKDIR /tmp/Python-3.9.2
+RUN ./configure --enable-optimizations && make -j 8 && make altinstall
+RUN ln -s /usr/local/bin/python3.9 /usr/bin/python3
+WORKDIR /
 
 RUN wget http://ftp.br.debian.org/debian/pool/contrib/m/msttcorefonts/ttf-mscorefonts-installer_3.6_all.deb && \
     dpkg -i ttf-mscorefonts-installer_3.6_all.deb && rm ttf-mscorefonts-installer_3.6_all.deb
