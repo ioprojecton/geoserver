@@ -48,52 +48,63 @@ jobs:
         cluster-name: ${{ env.CLUSTER_NAME }}
         resource-group: ${{ env.CLUSTER_RESOURCE_GROUP }}
 
-    # # Create imagepullsecret for Azure Container registry (ACR)
-    # - uses: azure/k8s-create-secret@v1
-    #   with:
-    #     container-registry-url: ${{ env.REGISTRY_NAME }}.azurecr.io
-    #     container-registry-username: ${{ secrets.REGISTRY_USERNAME }}
-    #     container-registry-password: ${{ secrets.REGISTRY_PASSWORD }}
-    #     secret-name: ${{ env.REGISTRY_NAME }}-registry-connection
-    #     namespace: ${{ env.NAMESPACE }}
-
-    # Scan image for vulnerabilities
-    - uses: Azure/container-scan@v0
+    # Create imagepullsecret for Azure Container registry (ACR)
+    - uses: azure/k8s-create-secret@v1
       with:
-        image-name: ${{ env.REGISTRY_NAME }}.azurecr.io/geoserver:${{ github.sha }}
-        severity-threshold: CRITICAL
-        run-quality-checks: false
+        container-registry-url: ${{ env.REGISTRY_NAME }}.azurecr.io
+        container-registry-username: ${{ secrets.REGISTRY_USERNAME }}
+        container-registry-password: ${{ secrets.REGISTRY_PASSWORD }}
+        secret-name: ${{ env.REGISTRY_NAME }}-registry-connection
+        namespace: ${{ env.NAMESPACE }}
 
-    # # Clone the Helm chart
-    # - run: |
-    #     git clone https://github.com/statcan/charts.git
-    #     mkdir -p /home/runner/work/_temp/_github_home/
-    #     cp $KUBECONFIG /home/runner/work/_temp/_github_home/KUBECONFIG
-
-    # # Deploy Helm chart
-    # - uses: 'statcan/actions/helm@master'
-    #   env:
-    #     KUBECONFIG: /github/home/KUBECONFIG
+    # # Scan image for vulnerabilities
+    # - uses: Azure/container-scan@v0
     #   with:
-    #     release: 'geoserver'
-    #     namespace: 'geo'
-    #     chart: './charts/stable/geoserver'
-    #     token: '${{ github.token }}'
-    #     values: |
-    #       image:
-    #         repository: "${{ env.REGISTRY_NAME }}.azurecr.io/geoserver"
-    #         tag: "${{ github.sha }}"
-    #       ingress:
-    #         enabled: true
-    #         hosts:
-    #           - host: "geoserver.${{ secrets.DOMAIN_NAME }}"
-    #             paths:
-    #               - "/*"
-    #         annotations:
-    #           kubernetes.io/ingress.class: istio
-    #       # destinationRule:
-    #       #   enabled: false
-    #       imagePullSecrets:
-    #         - name: "${{ env.REGISTRY_NAME }}-registry-connection"
-    #       annotations:
-    #         sidecar.istio.io/inject: "true"
+    #     image-name: ${{ env.REGISTRY_NAME }}.azurecr.io/geoserver:${{ github.sha }}
+    #     severity-threshold: CRITICAL
+    #     run-quality-checks: false
+
+    # Clone the Helm chart
+    - run: |
+        git clone https://github.com/statcan/charts.git
+        mkdir -p /home/runner/work/_temp/_github_home/
+        cp $KUBECONFIG /home/runner/work/_temp/_github_home/KUBECONFIG
+
+    # Deploy Helm chart
+    - uses: 'statcan/actions/helm@master'
+      env:
+        KUBECONFIG: /github/home/KUBECONFIG
+      with:
+        release: 'geoserver'
+        namespace: 'geo'
+        chart: './charts/stable/geoserver'
+        token: '${{ github.token }}'
+        values: |
+          image:
+            repository: "${{ env.REGISTRY_NAME }}.azurecr.io/geoserver"
+            tag: "${{ github.sha }}"
+          ingress:
+            enabled: true
+            hosts:
+              - host: "geoserver.${{ secrets.DOMAIN_NAME }}"
+                paths:
+                  - "/*"
+            annotations:
+              kubernetes.io/ingress.class: istio
+          # destinationRule:
+          #   enabled: false
+          imagePullSecrets:
+            - name: "${{ env.REGISTRY_NAME }}-registry-connection"
+          annotations:
+            sidecar.istio.io/inject: "true"
+          adminUser: ${{ secrets.ADMIN_USER }}
+          adminPassword: ${{ secrets.ADMIN_PASSWORD }}
+          external:
+            enabled: true
+            port: 5432
+            host: ${{ secrets.EXTERNAL_HOST }}
+            user: ${{ secrets.EXTERNAL_USER }}
+            password: ${{ secrets.EXTERNAL_PASSWORD }}
+            database: ${{ secrets.EXTERNAL_DATABASE }}
+          persistance:
+            enabled: true
