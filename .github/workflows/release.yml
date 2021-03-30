@@ -99,6 +99,7 @@ jobs:
             sidecar.istio.io/inject: "true"
           adminUser: ${{ secrets.ADMIN_USER }}
           adminPassword: ${{ secrets.ADMIN_PASSWORD }}
+          tomcatPassword: ${{ secrets.TOMCAT_PASSWORD }}
           external:
             enabled: true
             port: 5432
