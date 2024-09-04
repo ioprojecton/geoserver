@@ -111,12 +111,9 @@ EOF
 # Helper function to install plugin in proper path
 
 function install_plugin() {
-  DATA_PATH=/community_plugins
-  if [ -n "$1" ]; then
-    DATA_PATH=$1
-  fi
+  DATA_PATH=${1:-/community_plugins}  # if $1 is not provided then use "/community_plugins"
   EXT=$2
-
+  
   unzip ${DATA_PATH}/${EXT}.zip -d /tmp/gs_plugin &&
     cp -r -u -p /tmp/gs_plugin/*.jar "${CATALINA_HOME}"/webapps/geoserver/WEB-INF/lib/ &&
     rm -rf /tmp/gs_plugin
@@ -181,16 +178,21 @@ function file_env {
 	local var="$1"
 	local fileVar="${var}_FILE"
 	local def="${2:-}"
-	if [ "${!var:-}" ] && [ "${!fileVar:-}" ]; then
+
+        local varValue="${!var:-}"
+	local fileVarValue="${!fileVar:-}"
+        if [ -n "$varValue" ] && [ -n "$fileVarValue" ]; then
 		echo >&2 "error: both $var and $fileVar are set (but are exclusive)"
 		exit 1
 	fi
+ 
 	local val="$def"
-	if [ "${!var:-}" ]; then
-		val="${!var}"
-	elif [ "${!fileVar:-}" ]; then
-		val="$(< "${!fileVar}")"
+        if [ -n "$varValue" ]; then
+		val="$varValue"
+	elif [ -n "$fileVarValue" ]; then
+		val="$(< "$fileVarValue")"
 	fi
+
 	export "$var"="$val"
 	unset "$fileVar"
 }
